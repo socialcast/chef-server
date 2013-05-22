@@ -2,7 +2,7 @@
 # Copyright:: Copyright (c) 2012 Opscode, Inc.
 # License:: Apache License, Version 2.0
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 3.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
@@ -45,7 +45,16 @@ class OmnitruckClient
 
   def redirect_target(url)
     url = URI.parse(url)
-    http = Net::HTTP.new(url.host, url.port)
+    proxy_url_for_scheme = Chef::Config[url.scheme + "_proxy"]
+
+    proxy_host, proxy_port = if proxy_url_for_scheme
+      proxy_uri = URI.parse(proxy_url_for_scheme)
+      [proxy_uri.host, proxy_uri.port]
+    else
+      [nil, nil]
+    end
+
+    http = Net::HTTP.new(url.host, url.port, proxy_host, proxy_port)
     if url.scheme == "https"
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
